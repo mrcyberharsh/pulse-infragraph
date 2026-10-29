@@ -155,7 +155,7 @@ pulse-infragraph/
 - **Brand:** MR CYBER PULSE
 - **GitHub:** [@mrcyberharsh](https://github.com/mrcyberharsh)
 - **Repository:** [pulse-infragraph](https://github.com/mrcyberharsh/pulse-infragraph)
-- **Email:** `manager.prachi@zohomail.in` — replace with your public project email
+- **Email:** `manager.prachi@zohomail.in`
 - **Bug reports:** [GitHub Issues](https://github.com/mrcyberharsh/pulse-infragraph/issues)
 
 Replace placeholders before publishing; only share contact details you want public.

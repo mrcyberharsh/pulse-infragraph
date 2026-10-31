@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import streamlit as st
 from streamlit_agraph import Config, Edge, Node, agraph
@@ -19,6 +23,32 @@ BG = "#0a0a0f"
 PURPLE = "#a855f7"
 CYAN = "#22d3ee"
 FOOTER = "pulse-infragraph v1.0.0 | Created by Harsh Saini (MR CYBER PULSE) | Open-Source ASM Tool"
+HISTORY_PATH = Path(".pulse-infragraph-history.json")
+DEFAULT_RISK_WEIGHTS = {"keyword": 40, "wordpress": 20, "port": 5}
+
+
+def load_scan_history() -> list[dict[str, Any]]:
+    """Load recent scan results from a local JSON file."""
+    if not HISTORY_PATH.exists():
+        return []
+    try:
+        with HISTORY_PATH.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        if isinstance(payload, list):
+            return payload
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Could not read scan history; starting from empty state.")
+    return []
+
+
+def save_scan_history(entry: dict[str, Any]) -> None:
+    """Persist a compact scan summary for quick historical review."""
+    history = load_scan_history()
+    history.insert(0, entry)
+    history = history[:20]
+    with HISTORY_PATH.open("w", encoding="utf-8") as handle:
+        json.dump(history, handle, indent=2, ensure_ascii=False)
+
 
 st.set_page_config(page_title="pulse-infragraph | MR CYBER PULSE", page_icon="🕸️", layout="wide")
 st.markdown(f"""
@@ -44,8 +74,20 @@ with st.sidebar:
     st.caption("Community Edition v1.5.0")
     st.caption("Contact: YOUR_PUBLIC_EMAIL@example.com")
     st.markdown("---")
+    st.markdown("### Risk tuning")
+    keyword_weight = st.slider("Hostname keyword weight", 0, 100, DEFAULT_RISK_WEIGHTS["keyword"], key="keyword_weight")
+    wordpress_weight = st.slider("WordPress weight", 0, 100, DEFAULT_RISK_WEIGHTS["wordpress"], key="wordpress_weight")
+    port_weight = st.slider("Open port weight", 0, 100, DEFAULT_RISK_WEIGHTS["port"], key="port_weight")
+    scan_settings = {"keyword": keyword_weight, "wordpress": wordpress_weight, "port": port_weight}
+    st.markdown("---")
     st.caption("Use only on domains you own or are explicitly authorized to assess.")
     st.markdown(f"<div class='pulse-footer'>{FOOTER}</div>", unsafe_allow_html=True)
+
+    history = load_scan_history()
+    if history:
+        st.markdown("### Recent scans")
+        for item in history[:5]:
+            st.caption(f"{item.get('domain', 'unknown')} · {item.get('timestamp', '')}")
 
 st.title("🕸️ pulse-infragraph")
 st.caption("Attack Surface Management · OSINT Graph · Community Edition")
@@ -66,8 +108,18 @@ if scan_clicked:
     else:
         try:
             with st.spinner("Discovering public certificate records and fingerprinting responsive hosts…"):
-                result = asyncio.run(scan_domain(trimmed_domain, graph if graph.available else None))
+                result = asyncio.run(scan_domain(trimmed_domain, graph if graph.available else None, weights=scan_settings))
+            result.setdefault("scan_id", uuid4().hex[:8])
+            result["scan_settings"] = scan_settings
+            result["timestamp"] = datetime.now(timezone.utc).isoformat()
             st.session_state["last_result"] = result
+            save_scan_history({
+                "scan_id": result.get("scan_id"),
+                "domain": result.get("domain"),
+                "timestamp": result.get("timestamp"),
+                "asset_count": result.get("count", 0),
+                "settings": scan_settings,
+            })
             st.success(f"Analysis complete: {result['count']} assets processed.")
         except ValueError as exc:
             st.error(str(exc))

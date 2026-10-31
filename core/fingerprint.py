@@ -41,7 +41,6 @@ def calculate_risk(subdomain: str, technologies: list[str] | None = None,
         reasons.append(f"WordPress detected; review version, plugins, and hardening (+{settings['wordpress']})")
     ports = sorted(set(open_ports or []))
     if ports:
-        # Placeholder signal; avoid assuming that every open port is a vulnerability.
         port_points = min(20, settings["port"] * len(ports))
         score += port_points
         reasons.append(f"Open-port signal supplied by scanner: {', '.join(map(str, ports))} (+{port_points})")

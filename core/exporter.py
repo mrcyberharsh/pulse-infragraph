@@ -34,7 +34,7 @@ def _detect_technologies(headers: dict[str, str], body: str) -> list[str]:
         found.add("Apache")
     if "iis" in server or "microsoft-iis" in server:
         found.add("IIS")
-    if "django" in text or "djano" in text:
+    if "django" in text:
         found.add("Django")
     if "flask" in powered or "flask" in text:
         found.add("Flask")

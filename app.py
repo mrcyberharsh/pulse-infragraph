@@ -2,13 +2,17 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import streamlit as st
 from streamlit_agraph import Config, Edge, Node, agraph
 
-from core.engine import scan_domain
+from core.engine import normalize_domain, scan_domain
 from core.exporter import export_bugbounty_json, export_csv, export_nuclei_txt
 from core.graph import GraphStore
 
@@ -19,17 +23,33 @@ BG = "#0a0a0f"
 PURPLE = "#a855f7"
 CYAN = "#22d3ee"
 FOOTER = "pulse-infragraph v1.0.0 | Created by Harsh Saini (MR CYBER PULSE) | Open-Source ASM Tool"
+HISTORY_PATH = Path(".pulse-infragraph-history.json")
+DEFAULT_RISK_WEIGHTS = {"keyword": 40, "wordpress": 20, "port": 5}
 
-st.set_page_config(page_title="pulse-infragraph | MR CYBER PULSE", page_icon="🕸️", layout="wide")
-st.markdown(f"""
-<style>
-.stApp {{ background: {BG}; color: #e5e7eb; }}
-[data-testid="stSidebar"] {{ background: #11111b; border-right: 1px solid {PURPLE}; }}
-h1,h2,h3 {{ color: {CYAN}; }}
-div[data-testid="stMetric"] {{ background:#11111b; border:1px solid {PURPLE}; padding:14px; border-radius:12px; }}
-.pulse-footer {{ color:#9ca3af; font-size:0.78rem; border-top:1px solid {PURPLE}; padding-top:12px; margin-top:28px; }}
-</style>
-""", unsafe_allow_html=True)
+
+def load_scan_history() -> list[dict[str, Any]]:
+    """Load recent scan results from a local JSON file."""
+    if not HISTORY_PATH.exists():
+        return []
+    try:
+        with HISTORY_PATH.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        return payload if isinstance(payload, list) else []
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Could not read scan history; starting with an empty history.")
+        return []
+
+
+def save_scan_history(entry: dict[str, Any]) -> None:
+    """Persist a compact scan summary for quick historical review."""
+    history = load_scan_history()
+    history.insert(0, entry)
+    history = history[:20]
+    try:
+        with HISTORY_PATH.open("w", encoding="utf-8") as handle:
+            json.dump(history, handle, indent=2, ensure_ascii=False)
+    except OSError as exc:
+        logger.warning("Could not write scan history: %s", exc)
 
 
 @st.cache_resource
@@ -37,15 +57,39 @@ def get_graph() -> GraphStore:
     return GraphStore()
 
 
+def render_risk_controls() -> dict[str, int]:
+    """Render lightweight tuning controls for the risk model."""
+    st.markdown("### Risk tuning")
+    keyword_weight = st.slider("Hostname keyword weight", 0, 100, DEFAULT_RISK_WEIGHTS["keyword"], key="keyword_weight")
+    wordpress_weight = st.slider("WordPress weight", 0, 100, DEFAULT_RISK_WEIGHTS["wordpress"], key="wordpress_weight")
+    port_weight = st.slider("Open port weight", 0, 100, DEFAULT_RISK_WEIGHTS["port"], key="port_weight")
+    return {"keyword": keyword_weight, "wordpress": wordpress_weight, "port": port_weight}
+
+
+def render_history_sidebar() -> None:
+    """Render a small history section in the dashboard sidebar."""
+    history = load_scan_history()
+    if not history:
+        return
+    st.markdown("### Recent scans")
+    for item in history[:5]:
+        domain = item.get("domain") or "unknown"
+        timestamp = item.get("timestamp") or "unknown time"
+        st.caption(f"{domain} · {timestamp}")
+
+
 graph = get_graph()
 with st.sidebar:
-    st.image("logo.png", width=150) if __import__("pathlib").Path("logo.png").exists() else st.markdown(f"## 🕸️ <span style='color:{PURPLE}'>MR CYBER PULSE</span>", unsafe_allow_html=True)
+    st.image("logo.png", width=150) if Path("logo.png").exists() else st.markdown(f"## 🕸️ <span style='color:{PURPLE}'>MR CYBER PULSE</span>", unsafe_allow_html=True)
     st.markdown("### pulse-infragraph")
     st.caption("Community Edition v1.5.0")
     st.caption("Contact: YOUR_PUBLIC_EMAIL@example.com")
     st.markdown("---")
+    scan_settings = render_risk_controls()
+    st.markdown("---")
     st.caption("Use only on domains you own or are explicitly authorized to assess.")
     st.markdown(f"<div class='pulse-footer'>{FOOTER}</div>", unsafe_allow_html=True)
+    render_history_sidebar()
 
 st.title("🕸️ pulse-infragraph")
 st.caption("Attack Surface Management · OSINT Graph · Community Edition")
@@ -60,14 +104,31 @@ if not graph.available:
     st.warning("Neo4j is offline or unreachable. Scanning can still run, but graph persistence and saved-asset views are unavailable. Check NEO4J_URI, NEO4J_USER, and NEO4J_PASSWORD.")
 
 if scan_clicked:
-    try:
-        with st.spinner("Discovering public certificate records and fingerprinting responsive hosts…"):
-            result = asyncio.run(scan_domain(domain_input, graph if graph.available else None))
-        st.session_state["last_result"] = result
-        st.success(f"Analysis complete: {result['count']} assets processed.")
-    except Exception as exc:
-        logger.exception("Scan failed")
-        st.error(f"Could not run analysis: {exc}")
+    trimmed_domain = domain_input.strip()
+    if not trimmed_domain:
+        st.warning("Please enter a valid root domain such as example.com.")
+    else:
+        try:
+            normalize_domain(trimmed_domain)
+            with st.spinner("Discovering public certificate records and fingerprinting responsive hosts…"):
+                result = asyncio.run(scan_domain(trimmed_domain, graph if graph.available else None, weights=scan_settings))
+            result.setdefault("scan_id", uuid4().hex[:8])
+            result["scan_settings"] = scan_settings
+            result["timestamp"] = datetime.now(timezone.utc).isoformat()
+            st.session_state["last_result"] = result
+            save_scan_history({
+                "scan_id": result.get("scan_id"),
+                "domain": result.get("domain"),
+                "timestamp": result.get("timestamp"),
+                "asset_count": result.get("count", 0),
+                "settings": scan_settings,
+            })
+            st.success(f"Analysis complete: {result['count']} assets processed.")
+        except ValueError as exc:
+            st.error(str(exc))
+        except Exception as exc:
+            logger.exception("Scan failed")
+            st.error(f"Could not run analysis: {exc}")
 
 data: dict[str, Any] = st.session_state.get("last_result", {"domain": "", "assets": []})
 if refresh_clicked and graph.available:
@@ -159,3 +220,4 @@ else:
     st.info("Enter an authorized domain and select **Discover & Analyze** to begin.")
 
 st.markdown(f"<div class='pulse-footer'>{FOOTER}</div>", unsafe_allow_html=True)
+

@@ -1,173 +1,140 @@
 # pulse-infragraph
 
 <p align="center">
-  <img src="logo.png" alt="pulse-infragraph logo" width="620" />
+  <img src="logo.png" alt="pulse-infragraph logo" width="420" />
 </p>
 
-<p align="center">
-  <strong>Community Edition</strong> · Open-source attack surface management for authorized security research
-</p>
+<p align="center"><strong>Community Edition · Open-source Attack Surface Management</strong></p>
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" />
-  <img alt="Platform" src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-0ea5e9" />
-  <img alt="Neo4j" src="https://img.shields.io/badge/Neo4j-Graph-4581C3?logo=neo4j&logoColor=white" />
+  <img alt="Platforms" src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-0ea5e9" />
+  <img alt="Graph" src="https://img.shields.io/badge/Graph-Neo4j-4581C3?logo=neo4j&logoColor=white" />
 </p>
 
-pulse-infragraph is a lightweight, beginner-friendly attack surface management (ASM) tool that helps you discover public assets, identify exposed technologies, rank risk signals, and export friendly security outputs for authorized domains.
+**pulse-infragraph** helps security learners and authorized security teams build a clearer picture of a domain's public-facing assets. It combines passive subdomain discovery, HTTP technology fingerprinting, explainable risk signals, graph storage, and exportable reports.
 
-## Why this project
+> Use only with domains you own or have explicit permission to assess.
 
-- Passive subdomain discovery via certificate transparency
-- Quick HTTP(S) fingerprinting for common technology stacks
-- Explainable risk scoring with clear reasons
-- Neo4j-backed graph persistence for saved asset views and history
-- Nuclei, JSON, and CSV export flows for standard workflows
-- Designed with responsible-use guardrails and explicit domain validation
+## Highlights
 
-## Features
+- Passive subdomain discovery using certificate-transparency data
+- HTTP(S) technology fingerprinting
+- Explainable heuristic risk scores with human-readable reasons
+- Optional Neo4j graph persistence for domain, asset, and technology relationships
+- Recent-asset timeline support
+- JSON, CSV, and text exports
+- Streamlit dashboard and command-line workflow
+- Windows, macOS, and Linux setup guidance
 
-- Passive discovery of subdomains for a root domain
-- HTTP/HTTPS fingerprinting for Cloudflare, WordPress, Nginx, AWS, React, and more
-- Human-readable risk scores and reasons
-- Neo4j graph mapping for domain → asset → technology relationships
-- Timeline support for assets newly observed in the last 24 hours
-- Downloadable exports for bug bounty and recon workflows
-- Configurable risk tuning from the dashboard
-- CLI mode for terminal-only execution
+## Architecture at a glance
 
-## Responsible use
-
-This tool is intended for education, authorized security research, and bug bounty work only.
-
-- Only scan domains you own or are explicitly authorized to test
-- Respect rate limits and upstream service behavior
-- Treat all heuristic results as informational only
-- Do not use this tool against systems without permission
+```text
+Domain input
+    |
+    v
+Discovery -> HTTP fingerprinting -> Risk analysis
+    |                |                   |
+    +----------------+-------------------+
+                     |
+              Asset records
+                     |
+          +----------+----------+
+          |                     |
+      Streamlit UI          Neo4j (optional)
+          |
+      JSON / CSV / TXT exports
+```
 
 ## Requirements
 
 - Python 3.11+
 - Git
-- Internet access for certificate transparency and HTTP checks
-- Optional but recommended: Neo4j running locally via Docker
+- Internet access for certificate-transparency lookups and HTTP checks
+- Docker (optional, for the recommended Neo4j setup)
 
 ## Quick start
-
-### 1) Clone the repository
 
 ```bash
 git clone https://github.com/mrcyberharsh/pulse-infragraph.git
 cd pulse-infragraph
+python -m venv .venv
 ```
 
-### 2) Create a virtual environment
+Activate the environment:
 
-#### Linux/macOS
+**Linux / macOS**
+```bash
+source .venv/bin/activate
+```
+
+**Windows PowerShell**
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Install dependencies and launch:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+streamlit run app.py
 ```
 
-#### Windows PowerShell
+Open the local Streamlit URL printed in the terminal and enter a domain you are authorized to assess.
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+## Optional: Neo4j
 
-### 3) Start Neo4j (recommended)
+Start the repository's Neo4j service:
 
 ```bash
 docker compose up -d neo4j
 ```
 
-### 4) Set environment variables
+Configure the connection using environment variables. Replace the example password with a strong local secret.
 
-#### Linux/macOS
-
+**Linux / macOS**
 ```bash
 export NEO4J_URI="bolt://localhost:7687"
 export NEO4J_USER="neo4j"
 export NEO4J_PASSWORD="replace-with-a-strong-password"
 ```
 
-#### Windows PowerShell
-
+**Windows PowerShell**
 ```powershell
 $env:NEO4J_URI="bolt://localhost:7687"
 $env:NEO4J_USER="neo4j"
 $env:NEO4J_PASSWORD="replace-with-a-strong-password"
 ```
 
-### 5) Run the app
+## CLI
 
-```bash
-streamlit run app.py
-```
-
-Open the local Streamlit URL and enter an authorized domain such as `example.com`.
-
-## CLI usage
-
-Run a scan without the dashboard:
+For a terminal-only run:
 
 ```bash
 python cli.py example.com
 ```
 
-Example output:
-
-```json
-{
-  "domain": "example.com",
-  "count": 12,
-  "assets": [
-    {
-      "subdomain": "www.example.com",
-      "risk": {
-        "score": 20,
-        "level": "SAFE",
-        "reasons": [
-          "No configured risk signals detected; this is not a security guarantee."
-        ]
-      }
-    }
-  ]
-}
-```
+Use only an authorized test domain. Check the command's help output for available options.
 
 ## Risk model
 
-The project uses explainable heuristics rather than hidden scoring logic.
+Risk scores are heuristic indicators, not proof that a host is vulnerable or safe. Current documented signals include:
 
-Current signals include:
+- Hostname keywords such as `dev`, `test`, `staging`, `admin`, `beta`, `internal`, and `api-dev`
+- WordPress technology detection
+- Optional exposure signals when supplied by an authorized scanner
 
-- risky hostname keywords such as `dev`, `test`, `staging`, `admin`, `beta`, `internal`, `api-dev`
-- WordPress detection
-- optional port-based exposure signals supplied by an authorized scanner
-
-Risk levels:
-
-- SAFE: 0–29
-- EXPOSED: 30–59
-- CRITICAL: 60–100
+The dashboard groups scores into SAFE (0–29), EXPOSED (30–59), and CRITICAL (60–100). Always validate findings manually before making a security decision.
 
 ## Export formats
 
-The app can export:
+- `subdomains.txt` — discovered hostnames
+- `pulse-infragraph-report.json` — structured report data
+- `pulse-infragraph-assets.csv` — spreadsheet-friendly asset rows
 
-- `subdomains.txt` — one hostname per line for a Nuclei target list
-- `pulse-infragraph-report.json` — structured JSON report with metadata
-- `pulse-infragraph-assets.csv` — spreadsheet-friendly row data
-
-## Project structure
+## Project layout
 
 ```text
 pulse-infragraph/
@@ -181,60 +148,38 @@ pulse-infragraph/
 │   └── risk.py
 ├── logo.png
 ├── requirements.txt
-├── README.md
-├── LICENSE
 ├── docker-compose.yml
 ├── Dockerfile
 ├── install.sh
-└── .pulse-infragraph-history.json  # generated locally
+├── LICENSE
+└── README.md
 ```
 
 ## Troubleshooting
 
-### Neo4j offline
+| Issue | What to check |
+|---|---|
+| Neo4j is unavailable | Check Docker status and the configured connection variables |
+| No subdomains appear | Certificate-transparency data may be incomplete or delayed |
+| No fingerprint is detected | The host may be offline, block requests, or expose no recognizable markers |
+| Dependency installation fails | Confirm Python 3.11+ and activate the virtual environment |
 
-```bash
-docker ps
-docker compose up -d neo4j
-docker compose logs neo4j
-```
+## Responsible use
 
-### No subdomains found
+- Assess only assets you own or are explicitly authorized to test.
+- Respect service terms, rate limits, and upstream infrastructure.
+- Treat automated results as leads that require human validation.
+- Do not use the tool to access, disrupt, or test systems without permission.
 
-- verify the domain is valid and not a URL or wildcard
-- certificate transparency data may be incomplete or delayed
-- retry later if upstream services are temporarily unavailable
+## Contributing
 
-### No fingerprint results
+Issues and pull requests are welcome. Please include reproducible steps, expected behavior, actual behavior, and relevant sanitized logs. Avoid sharing secrets, personal data, or sensitive target information in public issues.
 
-- host may be offline or not actively serving content
-- the host may block HTTP requests or return generic responses
-- some technologies may not be detected without recognizable markers
+## License and credits
 
-## Development notes
+Released under the [MIT License](LICENSE).
 
-This repo is intentionally compact and readable. It aims to be easy to understand and extend, especially for security researchers and beginners studying ASM workflows.
+**pulse-infragraph v1.0.0 | Created by Harsh Saini (MR CYBER PULSE) | Open-Source ASM Tool**
 
-If you want to extend it, the most natural places are:
-
-- `core/fingerprint.py` for technology detection
-- `core/risk.py` for scoring logic
-- `core/exporter.py` for output formats
-- `app.py` for the Streamlit dashboard experience
-
-## License
-
-This project is licensed under the MIT License. See `LICENSE` for details.
-
-## Contact
-
-- Author: Harsh Saini
-- Brand: MR CYBER PULSE
 - GitHub: https://github.com/mrcyberharsh
-- Repository: https://github.com/mrcyberharsh/pulse-infragraph
-
----
-
-<p align="center">
-  <strong>pulse-infragraph</strong> · Community Edition · Built for authorized asset discovery
-</p>
+- Project: https://github.com/mrcyberharsh/pulse-infragraph

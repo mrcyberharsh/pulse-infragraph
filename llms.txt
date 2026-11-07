@@ -1,0 +1,34 @@
+# pulse-infragraph
+
+> Open-source Attack Surface Management tool for passive subdomain discovery, HTTP fingerprinting, risk scoring, and graph storage.
+
+pulse-infragraph is a Python-based ASM tool for authorized security teams. It discovers subdomains via certificate transparency, fingerprints HTTP services, scores risk heuristically, and exports JSON, CSV, TXT, SARIF, and PDF reports. MIT licensed.
+
+## Quick Start
+
+- [README](https://github.com/mrcyberharsh/pulse-infragraph/blob/main/README.md): Installation, CLI, Streamlit dashboard
+- [Contributing](https://github.com/mrcyberharsh/pulse-infragraph/blob/main/CONTRIBUTING.md): Development workflow
+- [Security Policy](https://github.com/mrcyberharsh/pulse-infragraph/blob/main/SECURITY.md): Responsible disclosure
+- [Support](https://github.com/mrcyberharsh/pulse-infragraph/blob/main/SUPPORT.md): Getting help
+
+## Core Documentation
+
+- [Risk Model](https://github.com/mrcyberharsh/pulse-infragraph#risk-model): SAFE / EXPOSED / CRITICAL scoring
+- [Neo4j Setup](https://github.com/mrcyberharsh/pulse-infragraph#optional-neo4j): Graph persistence
+- [Export Formats](https://github.com/mrcyberharsh/pulse-infragraph#export-formats): JSON, CSV, TXT, SARIF, PDF
+
+## Use Cases
+
+- Passive subdomain discovery for an authorized domain
+- HTTP technology fingerprinting and risk triage
+- Security header and TLS hygiene checks on discovered hosts
+
+## Limitations
+
+- Passive discovery only (certificate transparency)
+- Heuristic risk scores are indicators, not proof
+- Authorized domains only
+
+## Optional
+
+- [License](https://github.com/mrcyberharsh/pulse-infragraph/blob/main/LICENSE): MIT

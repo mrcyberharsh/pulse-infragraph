@@ -1,24 +1,23 @@
-"""Neo4j persistence and timeline queries. All methods fail clearly when DB is offline."""
+"""Neo4j persistence and timeline queries for asset inventory history."""
 from __future__ import annotations
-
 import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
-
 from neo4j import GraphDatabase
 
 logger = logging.getLogger(__name__)
 
-
 class GraphStore:
-    """Small Neo4j repository for domains, subdomains, technologies, and risk metadata."""
-
+    """Neo4j repository for domains, subdomains, technologies, and risk metadata."""
     def __init__(self, uri: str | None = None, user: str | None = None, password: str | None = None):
         self.uri = uri or os.getenv("NEO4J_URI", "bolt://localhost:7687")
         self.user = user or os.getenv("NEO4J_USER", "neo4j")
-        self.password = password or os.getenv("NEO4J_PASSWORD", "pulse-infragraph-change-me")
+        self.password = password or os.getenv("NEO4J_PASSWORD")
         self.driver = None
+        if not self.password:
+            logger.info("Neo4j disabled: set NEO4J_PASSWORD to enable graph persistence.")
+            return
         try:
             self.driver = GraphDatabase.driver(self.uri, auth=(self.user, self.password))
             self.driver.verify_connectivity()
@@ -41,9 +40,7 @@ class GraphStore:
             session.run("CREATE CONSTRAINT subdomain_name IF NOT EXISTS FOR (n:Subdomain) REQUIRE n.name IS UNIQUE")
             session.run("CREATE CONSTRAINT tech_name IF NOT EXISTS FOR (n:Tech) REQUIRE n.name IS UNIQUE")
 
-    def upsert_asset(self, domain: str, subdomain: str, risk: dict[str, Any],
-                     technologies: list[str] | None = None) -> None:
-        """Upsert an asset and preserve first_seen while updating last_seen."""
+    def upsert_asset(self, domain: str, subdomain: str, risk: dict[str, Any], technologies: list[str] | None = None) -> None:
         if not self.driver:
             raise ConnectionError("Neo4j is offline")
         now = datetime.now(timezone.utc).isoformat()
@@ -65,7 +62,6 @@ class GraphStore:
                 """, subdomain=subdomain, tech=tech)
 
     def get_assets(self) -> list[dict[str, Any]]:
-        """Return stored assets with attached technology names."""
         if not self.driver:
             raise ConnectionError("Neo4j is offline")
         with self.driver.session() as session:
@@ -80,10 +76,10 @@ class GraphStore:
             return [dict(row) for row in rows]
 
     def get_timeline(self, hours: int = 24) -> list[dict[str, Any]]:
-        """Return assets first observed within the last `hours` hours."""
         if not self.driver:
             raise ConnectionError("Neo4j is offline")
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        safe_hours = max(1, min(int(hours), 24 * 365))
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=safe_hours)).isoformat()
         with self.driver.session() as session:
             rows = session.run("""
                 MATCH (s:Subdomain)

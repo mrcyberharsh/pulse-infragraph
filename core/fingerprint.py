@@ -1,52 +1,84 @@
-"""Explainable, deterministic risk scoring for authorized ASM targets."""
+"""Conservative HTTP(S) technology fingerprinting."""
 from __future__ import annotations
 
+import asyncio
+import logging
 from typing import Any
 
-RISK_COLORS = {"SAFE": "#22c55e", "EXPOSED": "#f59e0b", "CRITICAL": "#ef4444"}
-RISK_KEYWORDS = ("dev", "test", "staging", "admin", "beta", "internal", "api-dev")
-DEFAULT_WEIGHTS = {"keyword": 40, "wordpress": 20, "port": 5}
+import aiohttp
+
+logger = logging.getLogger(__name__)
+DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=8, connect=4)
 
 
-def _normalize_weights(weights: dict[str, int] | None = None) -> dict[str, int]:
-    """Merge caller-provided risk weights with sane defaults."""
-    merged = DEFAULT_WEIGHTS.copy()
-    if weights:
-        for key, value in weights.items():
-            if key in merged and isinstance(value, int):
-                merged[key] = max(0, value)
-    return merged
+def _detect_technologies(headers: dict[str, str], body: str) -> list[str]:
+    normalized_headers = {key.lower(): value.lower() for key, value in headers.items()}
+    text = body.lower()
+    found: set[str] = set()
+    server = normalized_headers.get("server", "")
+    powered = normalized_headers.get("x-powered-by", "")
+
+    if "cloudflare" in server or "cf-ray" in normalized_headers:
+        found.add("Cloudflare")
+    if any(marker in text for marker in ("wordpress", "wp-content", "wp-json")):
+        found.add("WordPress")
+    if any(key.startswith("x-amz-") for key in normalized_headers):
+        found.add("AWS")
+    if "nginx" in server:
+        found.add("Nginx")
+    if "apache" in server:
+        found.add("Apache")
+    if "iis" in server or "microsoft-iis" in server:
+        found.add("IIS")
+    if "react" in text and any(marker in text for marker in ("data-reactroot", "__react", "react-dom")):
+        found.add("React")
+    if "aws" in powered:
+        found.add("AWS")
+    if "django" in text:
+        found.add("Django")
+    if "flask" in powered or "flask" in text:
+        found.add("Flask")
+    if "fastapi" in powered or "fastapi" in text:
+        found.add("FastAPI")
+    if "express" in powered or "nodejs" in powered:
+        found.add("Node.js")
+    return sorted(found)
 
 
-def calculate_risk(subdomain: str, technologies: list[str] | None = None,
-                    open_ports: list[int] | None = None,
-                    weights: dict[str, int] | None = None) -> dict[str, Any]:
-    """Return a 0–100 risk score, level, display color, and human-readable reasons.
+async def fingerprint_url(url: str, session: aiohttp.ClientSession) -> dict[str, Any]:
+    """Request one URL and return bounded response metadata."""
+    try:
+        async with session.get(url, allow_redirects=True) as response:
+            body = await response.text(errors="ignore")
+            return {
+                "url": url,
+                "status": response.status,
+                "final_url": str(response.url),
+                "technologies": _detect_technologies(dict(response.headers), body[:500_000]),
+                "headers": dict(response.headers),
+            }
+    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as exc:
+        logger.debug("Fingerprint failed for %s: %s", url, exc)
+        return {"url": url, "status": None, "technologies": [], "error": str(exc)}
 
-    Scoring is intentionally transparent. Keyword/technology/port signals are
-    heuristics, not proof of vulnerability. Port detection is a placeholder:
-    only ports explicitly supplied by an authorized scanner are considered.
-    """
-    settings = _normalize_weights(weights)
-    score = 0
-    reasons: list[str] = []
-    host = subdomain.lower().strip().rstrip(".")
-    matched = [word for word in RISK_KEYWORDS if word in host]
-    if matched:
-        score += settings["keyword"]
-        reasons.append(f"Risky hostname keyword(s): {', '.join(matched)} (+{settings['keyword']})")
-    techs = {item.lower() for item in (technologies or [])}
-    if "wordpress" in techs:
-        score += settings["wordpress"]
-        reasons.append(f"WordPress detected; review version, plugins, and hardening (+{settings['wordpress']})")
-    ports = sorted(set(open_ports or []))
-    if ports:
-        port_points = min(20, settings["port"] * len(ports))
-        score += port_points
-        reasons.append(f"Open-port signal supplied by scanner: {', '.join(map(str, ports))} (+{port_points})")
-    score = min(100, score)
-    level = "SAFE" if score < 30 else "EXPOSED" if score < 60 else "CRITICAL"
-    if not reasons:
-        reasons.append("No configured risk signals detected; this is not a security guarantee.")
-    return {"score": score, "level": level, "color": RISK_COLORS[level], "reasons": reasons}
 
+async def fingerprint_host(
+    host: str, session: aiohttp.ClientSession | None = None
+) -> dict[str, Any]:
+    """Try HTTPS, then HTTP if TLS connection fails."""
+    own_session = session is None
+    if own_session:
+        session = aiohttp.ClientSession(
+            timeout=DEFAULT_TIMEOUT,
+            headers={"User-Agent": "pulse-infragraph/1.5 (authorized ASM)"},
+        )
+    assert session is not None
+    try:
+        result = await fingerprint_url(f"https://{host}", session)
+        if result.get("status") is None:
+            result = await fingerprint_url(f"http://{host}", session)
+        result["host"] = host
+        return result
+    finally:
+        if own_session:
+            await session.close()

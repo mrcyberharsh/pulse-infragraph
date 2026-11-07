@@ -23,8 +23,10 @@
 - HTTP(S) technology fingerprinting
 - Explainable heuristic risk scores with human-readable reasons
 - Optional Neo4j graph persistence for domain, asset, and technology relationships
-- Recent-asset timeline support
-- JSON, CSV, and text exports
+- Local scan snapshots (up to 100 runs) with per-domain asset and risk history
+- New/removed asset comparison and risk-score trend chart
+- Optional Neo4j timeline for first-seen asset records
+- JSON, CSV, plain-text host-list, and PDF reports
 - Streamlit dashboard and command-line workflow
 - Windows, macOS, and Linux setup guidance
 
@@ -44,7 +46,7 @@ Discovery -> HTTP fingerprinting -> Risk analysis
           |                     |
       Streamlit UI          Neo4j (optional)
           |
-      JSON / CSV / TXT exports
+      JSON / CSV / TXT / PDF exports
 ```
 
 ## Requirements
@@ -92,7 +94,7 @@ Start the repository's Neo4j service:
 docker compose up -d neo4j
 ```
 
-Configure the connection using environment variables. Replace the example password with a strong local secret.
+Configure the connection using environment variables. Neo4j remains disabled unless you explicitly provide `NEO4J_PASSWORD`; use a strong local secret.
 
 **Linux / macOS**
 ```bash
@@ -114,6 +116,9 @@ For a terminal-only run:
 
 ```bash
 python cli.py example.com
+
+# Run core unit tests
+python -m unittest discover -s tests -v
 ```
 
 Use only an authorized test domain. Check the command's help output for available options.
@@ -133,6 +138,7 @@ The dashboard groups scores into SAFE (0–29), EXPOSED (30–59), and CRITICAL 
 - `subdomains.txt` — discovered hostnames
 - `pulse-infragraph-report.json` — structured report data
 - `pulse-infragraph-assets.csv` — spreadsheet-friendly asset rows
+- `pulse-infragraph-report.pdf` — printable asset inventory report
 
 ## Project layout
 
@@ -145,7 +151,11 @@ pulse-infragraph/
 │   ├── exporter.py
 │   ├── fingerprint.py
 │   ├── graph.py
+│   ├── history.py
+│   ├── fingerprint.py
 │   └── risk.py
+├── tests/
+│   └── test_core.py
 ├── logo.png
 ├── requirements.txt
 ├── docker-compose.yml

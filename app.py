@@ -26,6 +26,7 @@ FOOTER = "pulse-infragraph v1.0.0 | Created by Harsh Saini (MR CYBER PULSE) | Op
 DEFAULT_RISK_WEIGHTS = {"keyword": 40, "wordpress": 20, "port": 5}
 
 
+@st.cache_resource
 def get_graph() -> GraphStore:
     return GraphStore()
 

@@ -1,3 +1,6 @@
+# Copyright (c) 2026 MR CYBER PULSE
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Visual theme for the pulse-infragraph SOC dashboard."""
 from __future__ import annotations
 

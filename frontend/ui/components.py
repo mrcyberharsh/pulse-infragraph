@@ -1,3 +1,6 @@
+# Copyright (c) 2026 MR CYBER PULSE
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Small, safe-to-compose Streamlit components for the SOC dashboard."""
 from __future__ import annotations
 

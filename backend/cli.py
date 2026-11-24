@@ -1,3 +1,6 @@
+# Copyright (c) 2026 MR CYBER PULSE
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Command-line entrypoint for authorized ASM scans."""
 from __future__ import annotations
 

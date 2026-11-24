@@ -1,3 +1,6 @@
+# Copyright (c) 2026 MR CYBER PULSE
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Neo4j persistence and timeline queries for asset inventory history."""
 from __future__ import annotations
 import logging

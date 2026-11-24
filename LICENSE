@@ -1,21 +1,27 @@
-MIT License
+pulse-infragraph
+Copyright (c) 2026 MR CYBER PULSE
 
-Copyright (c) 2026 Harsh  saini (harry)
+This project is dual-licensed. You may choose either option below.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+OPTION 1 — GNU GENERAL PUBLIC LICENSE v3.0 OR LATER
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The Community Edition of pulse-infragraph is licensed under the GNU General Public License, version 3.0 or (at your option) any later version.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+You may use, study, modify, and redistribute the software under GPL-3.0-or-later terms. The complete license text is available at:
+https://www.gnu.org/licenses/gpl-3.0.txt
+
+SPDX-License-Identifier: GPL-3.0-or-later
+
+OPTION 2 — COMMERCIAL LICENSE
+
+A separate commercial license from MR CYBER PULSE is required for proprietary or closed-source distribution, embedding in proprietary products, customer-delivered deployments, or other use where you cannot or do not wish to comply with applicable GPL obligations.
+
+Commercial rights are granted only by a separately signed written agreement. This repository and its public availability do not grant a commercial license. See COMMERCIAL-LICENSE.md for details.
+
+TRADEMARK AND ATTRIBUTION
+
+“pulse-infragraph” and “MR CYBER PULSE” names and logos are not granted for use as trademarks by this license. Retain applicable copyright and license notices in copies and derivative works.
+
+NO WARRANTY
+
+Unless required by applicable law or agreed to in writing, the software is provided without warranty of any kind. See the GPL for the full warranty and liability terms.

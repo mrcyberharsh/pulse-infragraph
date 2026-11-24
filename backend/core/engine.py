@@ -8,9 +8,9 @@ from typing import Any
 
 import aiohttp
 
-from core.fingerprint import fingerprint_host
-from core.graph import GraphStore
-from core.risk import calculate_risk
+from backend.core.fingerprint import fingerprint_host
+from backend.core.graph import GraphStore
+from backend.core.risk import calculate_risk
 
 logger = logging.getLogger(__name__)
 HOST_RE = re.compile(

@@ -2,7 +2,7 @@ name: tests
 
 on:
   push:
-    branches: ["main", "feature/**"]
+    branches: ["main", "feature/**", "refactor/**"]
   pull_request:
     branches: ["main"]
 
@@ -22,4 +22,4 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
       - name: Compile Python files
-        run: python -m compileall -q app.py cli.py core tests
+        run: python -m compileall -q app.py cli.py backend frontend tests

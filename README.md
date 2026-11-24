@@ -31,6 +31,15 @@
 - Streamlit dashboard and command-line workflow
 - Windows, macOS, and Linux setup guidance
 
+## Project structure
+
+The repository keeps presentation and application entry points separate from the scanning backend:
+
+- `frontend/` contains the Streamlit application and reusable UI components.
+- `backend/core/` contains discovery, fingerprinting, risk, graph, history, and export logic.
+- `backend/cli.py` contains the command-line workflow implementation.
+- Root-level `app.py` and `cli.py` remain small compatibility launchers, so existing commands continue to work.
+
 ## Architecture at a glance
 
 ```text
@@ -82,7 +91,7 @@ Install dependencies and launch:
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-streamlit run app.py
+streamlit run app.py  # Root launcher delegates to frontend/app.py
 ```
 
 Open the local Streamlit URL printed in the terminal and enter a domain you are authorized to assess.
@@ -116,7 +125,7 @@ $env:NEO4J_PASSWORD="replace-with-a-strong-password"
 For a terminal-only run:
 
 ```bash
-python cli.py example.com
+python cli.py example.com  # Root launcher delegates to backend/cli.py
 
 # Run core unit tests
 python -m unittest discover -s tests -v
@@ -145,16 +154,22 @@ The dashboard groups scores into SAFE (0–29), EXPOSED (30–59), and CRITICAL 
 
 ```text
 pulse-infragraph/
-├── app.py
-├── cli.py
-├── core/
-│   ├── engine.py
-│   ├── exporter.py
-│   ├── fingerprint.py
-│   ├── graph.py
-│   ├── history.py
-│   ├── fingerprint.py
-│   └── risk.py
+├── app.py                  # Stable Streamlit entry point
+├── cli.py                  # Stable CLI entry point
+├── frontend/
+│   ├── app.py              # Streamlit pages and application flow
+│   └── ui/
+│       ├── components.py
+│       └── theme.py
+├── backend/
+│   ├── cli.py              # CLI implementation
+│   └── core/
+│       ├── engine.py
+│       ├── exporter.py
+│       ├── fingerprint.py
+│       ├── graph.py
+│       ├── history.py
+│       └── risk.py
 ├── tests/
 │   └── test_core.py
 ├── logo.png

@@ -18,6 +18,17 @@
 
 > Use only with domains you own or have explicit permission to assess.
 
+## Licensing
+
+pulse-infragraph is dual-licensed:
+
+- **Community Edition:** GNU General Public License v3.0 or later (GPL-3.0-or-later).
+- **Commercial License:** A separate commercial license is available from MR CYBER PULSE for proprietary/closed-source integrations and deployments requiring terms different from the GPL.
+
+See [LICENSE](LICENSE), [LICENSING.md](LICENSING.md), and [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md). Commercial rights require a separately signed written agreement.
+
+**Copyright:** Copyright (c) 2026 MR CYBER PULSE.
+
 ## Highlights
 
 - Passive subdomain discovery using certificate-transparency data

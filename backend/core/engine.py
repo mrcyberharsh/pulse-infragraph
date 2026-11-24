@@ -1,3 +1,6 @@
+# Copyright (c) 2026 MR CYBER PULSE
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Passive asset discovery workflow for explicitly authorized domains."""
 from __future__ import annotations
 

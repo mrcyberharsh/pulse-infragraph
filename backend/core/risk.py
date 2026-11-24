@@ -1,3 +1,6 @@
+# Copyright (c) 2026 MR CYBER PULSE
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Explainable heuristic risk scoring for authorized asset inventories."""
 from __future__ import annotations
 

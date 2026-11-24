@@ -4,10 +4,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core.engine import normalize_domain
-from core.exporter import export_bugbounty_json, export_csv, export_nuclei_txt
-from core.history import compare_scans, load_history, save_scan
-from core.risk import calculate_risk
+from backend.core.engine import normalize_domain
+from backend.core.exporter import export_bugbounty_json, export_csv, export_nuclei_txt
+from backend.core.history import compare_scans, load_history, save_scan
+from backend.core.risk import calculate_risk
 
 
 class DomainValidationTests(unittest.TestCase):

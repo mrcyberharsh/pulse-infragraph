@@ -11,7 +11,7 @@
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" />
   <img alt="Platforms" src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-0ea5e9" />
   <img alt="Graph" src="https://img.shields.io/badge/Graph-Neo4j-4581C3?logo=neo4j&logoColor=white" />
-  [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/mrcyberharsh/badge.svg)](https://hub.xerj.org/contributors/mrcyberharsh)
+  <a href="https://hub.xerj.org/contributors/mrcyberharsh"><img alt="XERJ Corpus Hub contributor" src="https://hub.xerj.org/contributors/mrcyberharsh/badge.svg" /></a>
 </p>
 
 **pulse-infragraph** helps security learners and authorized security teams build a clearer picture of a domain's public-facing assets. It combines passive subdomain discovery, HTTP technology fingerprinting, explainable risk signals, graph storage, and exportable reports.
